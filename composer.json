@@ -40,7 +40,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"XRuff\\Utils\\Csv\\Parser": "src/"
+			"XRuff\\Utils\\Csv\\Parser\\": "src/"
 		},
 		"classmap": [
 			"src/Utils/Csv/exceptions.php"
