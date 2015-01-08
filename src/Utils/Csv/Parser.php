@@ -6,7 +6,10 @@ use Nette\Object;
 use Tracy\Debugger;
 
 /**
- * Csv Parse
+ * Csv Parser
+ *
+ * @author		Pavel Lauko <info@webengine.cz>
+ * @package		Csv
  */
 class Parser extends Object
 {
@@ -25,32 +28,58 @@ class Parser extends Object
 	/** @var array|NULL */
 	public $map = NULL;
 
-	public function setSeparator($separator) {
+	/*
+	* @param string $separator
+	* @return Parser
+	*/
+	public function setSeparator($separator)
+	{
 		$this->separator = $separator;
 		return $this;
 	}
 
-	public function setFile($file) {
+	/*
+	* @param string $file
+	* @return Parser
+	*/
+	public function setFile($file)
+	{
 		$this->file = $file;
 		return $this;
 	}
 
-	public function setMap($map) {
+	/*
+	* @param array $map
+	* @return Parser
+	*/
+	public function setMap(array $map) {
 		$this->map = $map;
 		return $this;
 	}
 
-	public function removeId() {
+	/*
+	* @return Parser
+	*/
+	public function removeId()
+	{
 		$this->removeId = TRUE;
 		return $this;
 	}
 
-	public function skipHead() {
+	/*
+	* @return Parser
+	*/
+	public function skipHead()
+	{
 		$this->skipHead = TRUE;
 		return $this;
 	}
 
-	public function fopenUtf8($fileName) {
+	/*
+	* @param string $fileName
+	*/
+	public function fopenUtf8($fileName)
+	{
 		$fc = file_get_contents($fileName); // iconv('windows-1250', 'utf-8', file_get_contents($fileName));
 		$handle = fopen("php://memory", "rw");
 		fwrite($handle, $fc);
@@ -58,9 +87,18 @@ class Parser extends Object
 		return $handle;
 	}
 
-	public function load() {
+	/*
+	* @return array $rows
+	*/
+	public function load()
+	{
 
-		if(!$this->file) return array();
+		if (!$this->file) {
+			throw new ParserException(
+				"Nebyl zadán soubor pro import.",
+				ParserException::ERROR_NAME
+			);
+		}
 
 		$file = $this->fopenUtf8($this->file, "r");
 		$rows = array();
