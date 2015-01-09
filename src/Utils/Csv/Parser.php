@@ -14,16 +14,19 @@ use Tracy\Debugger;
 class Parser extends Object
 {
 	/** @var string */
-	public $separator = ',';
+	private $separator = ',';
 
 	/** @var string */
-	public $file;
+	private $file;
 
 	/** @var string */
-	public $removeId = FALSE;
+	private $removeId = FALSE;
 
 	/** @var bool */
-	public $skipHead = FALSE;
+	private $skipHead = FALSE;
+
+	/** @var bool */
+	private $stopOnEmpty = FALSE;
 
 	/** @var array|NULL */
 	public $map = NULL;
@@ -76,11 +79,26 @@ class Parser extends Object
 	}
 
 	/*
+	* @return Parser
+	*/
+	public function stopOnEmpty()
+	{
+		$this->stopOnEmpty = TRUE;
+		return $this;
+	}
+
+	/*
 	* @param string $fileName
 	*/
-	public function fopenUtf8($fileName)
+	public function fopen($fileName)
 	{
 		$fc = file_get_contents($fileName); // iconv('windows-1250', 'utf-8', file_get_contents($fileName));
+		if (trim($fc) == '') {
+			throw new ParserException(
+				"Data neobsahují žádné hodnoty.",
+				ParserException::ERROR_NO_DATA
+			);
+		}
 		$handle = fopen("php://memory", "rw");
 		fwrite($handle, $fc);
 		fseek($handle, 0);
@@ -96,11 +114,11 @@ class Parser extends Object
 		if (!$this->file) {
 			throw new ParserException(
 				"Nebyl zadán soubor pro import.",
-				ParserException::ERROR_NAME
+				ParserException::ERROR_NO_FILE
 			);
 		}
 
-		$file = $this->fopenUtf8($this->file, "r");
+		$file = $this->fopen($this->file, "r");
 		$rows = array();
 		$afterHeader = true;
 		$step = 0;
@@ -111,6 +129,25 @@ class Parser extends Object
 					$head = $line;
 				}
 
+				if (count($line) != count($head)) {
+
+					if ($line[0] == NULL) {
+						if ($this->stopOnEmpty) {
+							throw new ParserException(
+								"Řádek " . ($step + 1) . " je prázdný.",
+								ParserException::ERROR_COLUMN_COUNT
+							);
+						} else {
+							continue;
+						}
+					}
+
+					throw new ParserException(
+						"Počet slopců na řádku " . ($step + 1) . " (" . count($line) . ") neodpovídá počtu sloupců v hlavičce (" . count($head) . ").",
+						ParserException::ERROR_COLUMN_COUNT
+					);
+				}
+
 				$array = array();
 				foreach ($line as $key => $value) {
 					if ($this->map) {
@@ -119,7 +156,7 @@ class Parser extends Object
 						} else {
 							throw new ParserException(
 								"Soubor obsahuje špatný název sloupce.",
-								ParserException::ERROR_NAME
+								ParserException::ERROR_COLUMN_NAMES
 							);
 						}
 					} else {
@@ -136,9 +173,12 @@ class Parser extends Object
 				$step++;
 			}
 
-			// skip file until empty line
-			if ($line[0] == null)
-				$afterHeader = false;
+			if ($this->stopOnEmpty) {
+				// skip file until empty line
+				if ($line[0] == NULL) {
+					$afterHeader = FALSE;
+				}
+			}
 		}
 
 		fclose($file);
