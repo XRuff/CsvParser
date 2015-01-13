@@ -118,6 +118,17 @@ class Parser extends Object
 	}
 
 	/**
+	* @param array $requiredColumns
+	* @return Parser
+	*/
+	public function setEncoding($in, $out = 'utf-8')
+	{
+		$this->encodingIn = $in;
+		$this->encodingOut = $out;
+		return $this;
+	}
+
+	/**
 	* @param array $columnsFormat
 	* @return Parser
 	*/
@@ -132,7 +143,12 @@ class Parser extends Object
 	*/
 	public function fopen($fileName)
 	{
-		$fc = file_get_contents($fileName); // iconv('windows-1250', 'utf-8', file_get_contents($fileName));
+		$fc = file_get_contents($fileName);
+
+		if ($this->encodingIn) {
+			$fc = iconv($this->encodingIn, $this->encodingOut, $fc);
+		}
+
 		if (trim($fc) == '') {
 			throw new ParserException(
 				"Data neobsahují žádné hodnoty.",
