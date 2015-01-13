@@ -31,15 +31,27 @@ class Parser extends Object
 	private $stopOnEmpty = false;
 
 	/** @var array|null */
-	public $map = null;
+	private $map = null;
 
 	/** @var array|null */
-	public $requiredColumns = null;
+	private $requiredColumns = null;
 
 	/** @var array|null */
-	public $columnsFormat = null;
+	private $columnsFormat = null;
 
-	/*
+	/** @var string */
+	private $encodingIn = null;
+
+	/** @var string */
+	private $encodingOut = null;
+
+	/** @var array */
+	private $head = array();
+
+	/** @var int */
+	private $step;
+
+	/**
 	* @param string $separator
 	* @return Parser
 	*/
@@ -49,7 +61,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @param string $file
 	* @return Parser
 	*/
@@ -59,7 +71,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @param array $map
 	* @return Parser
 	*/
@@ -68,7 +80,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @return Parser
 	*/
 	public function removeId()
@@ -77,7 +89,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @return Parser
 	*/
 	public function skipHead()
@@ -86,7 +98,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @return Parser
 	*/
 	public function stopOnEmpty()
@@ -95,7 +107,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @param array $requiredColumns
 	* @return Parser
 	*/
@@ -105,7 +117,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @param array $columnsFormat
 	* @return Parser
 	*/
@@ -115,7 +127,7 @@ class Parser extends Object
 		return $this;
 	}
 
-	/*
+	/**
 	* @param string $fileName
 	*/
 	public function fopen($fileName)
@@ -133,7 +145,152 @@ class Parser extends Object
 		return $handle;
 	}
 
-	/*
+	/**
+	* @param array $line
+	*
+	* @throws ParserException
+	*
+	* @return string $columnName
+	*/
+	private function setHead($line)
+	{
+		$this->head = $line;
+		if ($this->requiredColumns) {
+			foreach ($this->requiredColumns as $key => $value) {
+				if (!in_array($value, $this->head)) {
+					throw new ParserException(
+						"Povinný sloupec '" . $value . "' není k dispozici.",
+						ParserException::ERROR_COLUMN_REQUIRE
+					);
+				}
+			}
+		}
+
+		return $this;
+	}
+
+	/**
+	* @param string $key
+	* @param string $value
+	*
+	* @throws ParserException
+	*
+	* @return void
+	*/
+	private function checkRequiredColumn($key, $value)
+	{
+		if ($this->requiredColumns && in_array($this->head[$key], $this->requiredColumns)) {
+			if (trim($value) == '') {
+				throw new ParserException(
+					"Na řádku " . ($this->step + 1) . " je hodnota '" . $this->head[$key] . "' prázdná, její vyplnění je ale povinné.",
+					ParserException::ERROR_COLUMN_EMPTY
+				);
+			}
+		}
+	}
+
+	/**
+	* @param array $line
+	*
+	* @throws ParserException
+	*
+	* @return void
+	*/
+	private function checkColumnsCount($line)
+	{
+		if ($line[0] == null) {
+			if ($this->stopOnEmpty) {
+				throw new ParserException(
+					"Řádek " . ($this->step + 1) . " je prázdný.",
+					ParserException::ERROR_COLUMN_COUNT
+				);
+			} else {
+				continue;
+			}
+		}
+
+		throw new ParserException(
+			"Počet slopců na řádku " . ($this->step + 1) . " (" . count($line) . ") neodpovídá počtu sloupců v hlavičce (" . count($this->head) . ").",
+			ParserException::ERROR_COLUMN_COUNT
+		);
+	}
+
+	/**
+	* @param string $key
+	*
+	* @throws ParserException
+	*
+	* @return string $columnName
+	*/
+	private function getColumnName($key)
+	{
+		if ($this->map) {
+			if (array_key_exists($this->head[$key], $this->map)) {
+				$columnName = $this->map[$this->head[$key]];
+			} else {
+				throw new ParserException(
+					"Soubor obsahuje špatný název sloupce '" . $this->head[$key] . "'.",
+					ParserException::ERROR_COLUMN_NAMES
+				);
+			}
+		} else {
+			$columnName = $this->head[$key];
+		}
+
+		return $columnName;
+	}
+
+	/**
+	* @param string $key
+	* @param string $value
+	*
+	* @throws ParserException
+	*
+	* @return bool
+	*/
+	private function checkFormat($key, $value)
+	{
+		if ($this->columnsFormat && array_key_exists($this->head[$key], $this->columnsFormat) && $this->step > 0) {
+			$format = $this->columnsFormat[$this->head[$key]];
+
+			if (!$this->checkType($value, $format)) {
+				throw new ParserException(
+					"Na řádku " . ($this->step + 1) . " má hodnota '" . $this->head[$key] . "' (" . $value . ") špatný typ, očekává se " . $format . ".",
+					ParserException::ERROR_COLUMN_TYPE
+				);
+			}
+		}
+	}
+
+	/**
+	* @param string $value
+	* @param string $format
+	*
+	* @return bool
+	*/
+	private function checkType($value, $format)
+	{
+		if ($format == 'date') {
+			return $this->isValidDateString($value);
+		}
+
+		return Validators::is($value, $format);
+	}
+
+	/**
+	* @param string $dateString
+	*
+	* @return bool
+	*/
+	private function isValidDateString($dateString)
+	{
+		list($date, $year, $month, $day) = Strings::match($dateString, '~^(\d{4})-(\d{2})-(\d{2})\z~');
+		return checkdate($month, $day, $year);
+	}
+
+	/**
+	* @throws ParserException
+	*
 	* @return array $rows
 	*/
 	public function load()
@@ -148,78 +305,30 @@ class Parser extends Object
 		$file = $this->fopen($this->file, "r");
 		$rows = array();
 		$afterHeader = true;
-		$step = 0;
+		$this->step = 0;
 		while (($line = fgetcsv($file, 0, $this->separator)) !== false) {
 
 			if ($afterHeader) {
+
 				if (sizeof($rows) < 1) {
-					$head = $line;
-					if ($this->requiredColumns) {
-						foreach ($this->requiredColumns as $key => $value) {
-							if (!in_array($value, $head)) {
-								throw new ParserException(
-									"Povinný sloupec '" . $value . "' není k dispozici.",
-									ParserException::ERROR_COLUMN_REQUIRE
-								);
-							}
-						}
-					}
+					// prepare head of file with column names
+					$this->setHead($line);
 				}
 
-				if (count($line) != count($head)) {
-
-					if ($line[0] == null) {
-						if ($this->stopOnEmpty) {
-							throw new ParserException(
-								"Řádek " . ($step + 1) . " je prázdný.",
-								ParserException::ERROR_COLUMN_COUNT
-							);
-						} else {
-							continue;
-						}
-					}
-
-					throw new ParserException(
-						"Počet slopců na řádku " . ($step + 1) . " (" . count($line) . ") neodpovídá počtu sloupců v hlavičce (" . count($head) . ").",
-						ParserException::ERROR_COLUMN_COUNT
-					);
+				if (count($line) != count($this->head)) {
+					$this->checkColumnsCount($line);
 				}
 
 				$array = array();
 				foreach ($line as $key => $value) {
 
-					if ($this->requiredColumns && in_array($head[$key], $this->requiredColumns)) {
-						if (trim($value) == '') {
-							throw new ParserException(
-								"Na řádku " . ($step + 1) . " je hodnota '" . $head[$key] . "' prázdná, její vyplnění je ale povinné.",
-								ParserException::ERROR_COLUMN_EMPTY
-							);
-						}
-					}
+					$this->checkRequiredColumn($key, $value);
 
-					if ($this->columnsFormat && array_key_exists($head[$key], $this->columnsFormat) && $step > 0) {
-						$format = $this->columnsFormat[$head[$key]];
+					// check column content format
+					$this->checkFormat($key, $value);
 
-						if (!$this->checkType($value, $format)) {
-							throw new ParserException(
-								"Na řádku " . ($step + 1) . " má hodnota '" . $head[$key] . "' (" . $value . ") špatný typ, očekává se " . $format . ".",
-								ParserException::ERROR_COLUMN_TYPE
-							);
-						}
-					}
-
-					if ($this->map) {
-						if (array_key_exists($head[$key], $this->map)) {
-							$columnName = $this->map[$head[$key]];
-						} else {
-							throw new ParserException(
-								"Soubor obsahuje špatný název sloupce '" . $head[$key] . "'.",
-								ParserException::ERROR_COLUMN_NAMES
-							);
-						}
-					} else {
-						$columnName = $head[$key];
-					}
+					// get canonical column name
+					$columnName = $this->getColumnName($key);
 
 					if ($this->removeId && $columnName == 'id') {
 						continue;
@@ -228,7 +337,7 @@ class Parser extends Object
 					$array[(string) $columnName] = $value;
 				}
 				$rows[] = $array;
-				$step++;
+				$this->step++;
 			}
 
 			if ($this->stopOnEmpty) {
@@ -244,21 +353,6 @@ class Parser extends Object
 			unset($rows[0]);
 		}
 		return $rows;
-	}
-
-	private function checkType($value, $format)
-	{
-		if ($format == 'date') {
-			return $this->isValidDateString($value);
-		}
-
-		return Validators::is($value, $format);
-	}
-
-	private function isValidDateString($dateString)
-	{
-		list($date, $year, $month, $day) = Strings::match($dateString, '~^(\d{4})-(\d{2})-(\d{2})\z~');
-		return checkdate($month, $day, $year);
 	}
 
 }
