@@ -135,29 +135,6 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $fileName
-	*/
-	public function fopen($fileName)
-	{
-		$fc = file_get_contents($fileName);
-
-		if ($this->getConfig()->encodingIn) {
-			$fc = iconv($this->getConfig()->encodingIn, $this->getConfig()->encodingOut, $fc);
-		}
-
-		if (trim($fc) == '') {
-			throw new ParserException(
-				Warnings::$error_no_data,
-				ParserException::ERROR_NO_DATA
-			);
-		}
-		$handle = fopen("php://memory", "rw");
-		fwrite($handle, $fc);
-		fseek($handle, 0);
-		return $handle;
-	}
-
-	/**
 	* @param array $line
 	*
 	* @throws ParserException
@@ -216,8 +193,6 @@ class Parser extends Object
 					sprintf(Warnings::$error_row_empty, ($this->step + 1)),
 					ParserException::ERROR_COLUMN_COUNT
 				);
-			} else {
-				continue;
 			}
 		}
 

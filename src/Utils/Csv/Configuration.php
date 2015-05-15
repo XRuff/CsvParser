@@ -3,7 +3,6 @@
 namespace XRuff\Utils\Csv;
 
 use Nette\Object;
-use Tracy\Debugger;
 
 /**
  * Csv Parser Configuration
