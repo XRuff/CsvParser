@@ -36,7 +36,7 @@
 		"nette/tokenizer": "~2.2@dev",
 		"latte/latte": "~2.2@dev",
 		"tracy/tracy": "~2.2@dev",
-		"nette/tester": "@dev"
+		"nette/tester": "~1.4"
 	},
 	"autoload": {
 		"psr-4": {
