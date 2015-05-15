@@ -1,6 +1,11 @@
 CSV parser for Nette Framework
 ==============
 
+[![Build Status](https://travis-ci.org/XRuff/CsvParser.svg)](https://travis-ci.org/XRuff/CsvParser)
+[![Downloads this Month](https://img.shields.io/packagist/dm/xruff/csvparser.svg)](https://packagist.org/packages/xruff/csvparser)
+[![Latest stable](https://img.shields.io/packagist/v/xruff/csvparser.svg)](https://packagist.org/packages/xruff/csvparser)
+
+
 Requirements
 ------------
 
