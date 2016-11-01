@@ -36,7 +36,8 @@
 		"nette/tokenizer": "~2.2@dev",
 		"latte/latte": "~2.2@dev",
 		"tracy/tracy": "~2.2@dev",
-		"nette/tester": "~1.4"
+		"nette/tester": "~1.4",
+		"vanio/coding-standards": "^0.1@dev"
 	},
 	"autoload": {
 		"psr-4": {
@@ -45,5 +46,9 @@
 		"classmap": [
 			"src/Utils/Csv/exceptions.php"
 		]
+	},
+	"scripts": {
+		"lint": "\"vendor/bin/phpcs\" --standard=ruleset.xml --extensions=php --encoding=utf-8 --ignore=vendor .",
+		"fix": "\"vendor/bin/phpcbf\" --standard=ruleset.xml --extensions=php --encoding=utf-8 --no-patch --ignore=vendor ."
 	}
 }

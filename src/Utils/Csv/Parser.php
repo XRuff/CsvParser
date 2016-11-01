@@ -3,9 +3,8 @@
 namespace XRuff\Utils\Csv;
 
 use Nette\Object;
-use Tracy\Debugger;
-use Nette\Utils\Validators;
 use Nette\Utils\Strings;
+use Nette\Utils\Validators;
 
 /**
  * Csv Parser
@@ -17,7 +16,7 @@ class Parser extends Object
 {
 
 	/** @var array */
-	private $head = array();
+	private $head = [];
 
 	/** @var int */
 	private $step;
@@ -26,9 +25,8 @@ class Parser extends Object
 	private $config = null;
 
 	/**
-	* @param string $separator
-	* @return Parser
-	*/
+	 * @return Configuration
+	 */
 	public function getConfig()
 	{
 		if (!$this->config) {
@@ -38,9 +36,9 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $separator
-	* @return Parser
-	*/
+	 * @param string $separator
+	 * @return Parser
+	 */
 	public function setSeparator($separator)
 	{
 		$this->getConfig()->separator = $separator;
@@ -48,9 +46,9 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $file
-	* @return Parser
-	*/
+	 * @param string $file
+	 * @return Parser
+	 */
 	public function setFile($file)
 	{
 		$this->getConfig()->file = $file;
@@ -58,45 +56,45 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $map
-	* @return Parser
-	*/
+	 * @param array $map
+	 * @return Parser
+	 */
 	public function setMap(array $map) {
 		$this->getConfig()->map = $map;
 		return $this;
 	}
 
 	/**
-	* @return Parser
-	*/
+	 * @return Parser
+	 */
 	public function removeId()
 	{
-		$this->getConfig()->removeId = TRUE;
+		$this->getConfig()->removeId = true;
 		return $this;
 	}
 
 	/**
-	* @return Parser
-	*/
+	 * @return Parser
+	 */
 	public function skipHead()
 	{
-		$this->getConfig()->skipHead = TRUE;
+		$this->getConfig()->skipHead = true;
 		return $this;
 	}
 
 	/**
-	* @return Parser
-	*/
+	 * @return Parser
+	 */
 	public function stopOnEmpty()
 	{
-		$this->getConfig()->stopOnEmpty = TRUE;
+		$this->getConfig()->stopOnEmpty = true;
 		return $this;
 	}
 
 	/**
-	* @param array $requiredColumns
-	* @return Parser
-	*/
+	 * @param array $requiredColumns
+	 * @return Parser
+	 */
 	public function setRequired(array $requiredColumns)
 	{
 		$this->getConfig()->requiredColumns = $requiredColumns;
@@ -104,9 +102,10 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $requiredColumns
-	* @return Parser
-	*/
+	 * @param string $in
+	 * @param string $out
+	 * @return Parser
+	 */
 	public function setEncoding($in, $out = 'utf-8')
 	{
 		$this->getConfig()->encodingIn = $in;
@@ -115,9 +114,9 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $columnsFormat
-	* @return Parser
-	*/
+	 * @param array $columnsFormat
+	 * @return Parser
+	 */
 	public function setColumnsFormat(array $columnsFormat)
 	{
 		$this->getConfig()->columnsFormat = $columnsFormat;
@@ -125,9 +124,9 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $translations
-	* @return Parser
-	*/
+	 * @param array $translations
+	 * @return Parser
+	 */
 	public function setTranslations(array $translations)
 	{
 		Warnings::setTranslations($translations);
@@ -135,12 +134,12 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $line
-	*
-	* @throws ParserException
-	*
-	* @return string $columnName
-	*/
+	 * @param array $line
+	 *
+	 * @throws ParserException
+	 *
+	 * @return Parser
+	 */
 	private function setHead($line)
 	{
 		$this->head = $line;
@@ -159,13 +158,13 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $key
-	* @param string $value
-	*
-	* @throws ParserException
-	*
-	* @return void
-	*/
+	 * @param string $key
+	 * @param string $value
+	 *
+	 * @throws ParserException
+	 *
+	 * @return void
+	 */
 	private function checkRequiredColumn($key, $value)
 	{
 		if ($this->getConfig()->requiredColumns && in_array($this->head[$key], $this->getConfig()->requiredColumns)) {
@@ -179,12 +178,12 @@ class Parser extends Object
 	}
 
 	/**
-	* @param array $line
-	*
-	* @throws ParserException
-	*
-	* @return void
-	*/
+	 * @param array $line
+	 *
+	 * @throws ParserException
+	 *
+	 * @return void
+	 */
 	private function checkColumnsCount($line)
 	{
 		if ($line[0] == null) {
@@ -203,12 +202,12 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $key
-	*
-	* @throws ParserException
-	*
-	* @return string $columnName
-	*/
+	 * @param string $key
+	 *
+	 * @throws ParserException
+	 *
+	 * @return string $columnName
+	 */
 	private function getColumnName($key)
 	{
 		if ($this->getConfig()->map) {
@@ -228,13 +227,11 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $key
-	* @param string $value
-	*
-	* @throws ParserException
-	*
-	* @return bool
-	*/
+	 * @param string $key
+	 * @param string $value
+	 *
+	 * @throws ParserException
+	 */
 	private function checkFormat($key, $value)
 	{
 		if ($this->getConfig()->columnsFormat && array_key_exists($this->head[$key], $this->getConfig()->columnsFormat) && $this->step > 0) {
@@ -250,11 +247,11 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $value
-	* @param string $format
-	*
-	* @return bool
-	*/
+	 * @param string $value
+	 * @param string $format
+	 *
+	 * @return bool
+	 */
 	private function checkType($value, $format)
 	{
 		if ($format == 'date') {
@@ -265,10 +262,10 @@ class Parser extends Object
 	}
 
 	/**
-	* @param string $dateString
-	*
-	* @return bool
-	*/
+	 * @param string $dateString
+	 *
+	 * @return bool
+	 */
 	private function isValidDateString($dateString)
 	{
 		if (Strings::contains($dateString, '-')) {
@@ -285,24 +282,23 @@ class Parser extends Object
 	}
 
 	/**
-	* @throws ParserException
-	*
-	* @return array $rows
-	*/
+	 * @throws ParserException
+	 *
+	 * @return array $rows
+	 */
 	public function load()
 	{
-
 		$file = new File($this->getConfig());
 		$content = $file->open();
 
-		$rows = array();
+		$rows = [];
 		$afterHeader = true;
 		$this->step = 0;
 		while (($line = $file->getLine($content)) !== false) {
 
 			if ($afterHeader) {
 
-				if (sizeof($rows) < 1) {
+				if (count($rows) < 1) {
 					// prepare head of file with column names
 					$this->setHead($line);
 				}
@@ -311,7 +307,7 @@ class Parser extends Object
 					$this->checkColumnsCount($line);
 				}
 
-				$array = array();
+				$array = [];
 				foreach ($line as $key => $value) {
 
 					$this->checkRequiredColumn($key, $value);

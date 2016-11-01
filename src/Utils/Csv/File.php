@@ -3,7 +3,6 @@
 namespace XRuff\Utils\Csv;
 
 use Nette\Object;
-use Tracy\Debugger;
 
 /**
  * Csv Parser File
@@ -24,9 +23,11 @@ class File extends Object
 	}
 
 	/**
-	* @param string $fileName
-	*/
-	public function open($file = null, $method = "rw")
+	 * @param string $file
+	 * @param string $method
+	 * @return resource
+	 */
+	public function open($file = null, $method = 'rw')
 	{
 		if (!$file) {
 			$file = $this->config->file;
@@ -45,13 +46,13 @@ class File extends Object
 			$fc = iconv($this->config->encodingIn, $this->config->encodingOut, $fc);
 		}
 
-		if (trim($fc) == '') {
+		if (trim($fc) === '') {
 			throw new ParserException(
 				Warnings::$error_no_data,
 				ParserException::ERROR_NO_DATA
 			);
 		}
-		$this->handle = fopen("php://memory", $method);
+		$this->handle = fopen('php://memory', $method);
 		fwrite($this->handle, $fc);
 		fseek($this->handle, 0);
 		return $this->handle;
@@ -61,8 +62,12 @@ class File extends Object
 		fclose($this->handle);
 	}
 
+	/**
+	 * @param string $content
+	 * @return array
+	 */
 	public function getLine($content) {
 		return fgetcsv($content, 0, $this->config->separator);
 	}
-	
+
 }
