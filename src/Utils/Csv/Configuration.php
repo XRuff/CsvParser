@@ -29,6 +29,9 @@ class Configuration extends Object
 	public $skipHead = false;
 
 	/** @var bool */
+	public $noHead = false;
+
+	/** @var bool */
 	public $stopOnEmpty = false;
 
 	/** @var array|null */

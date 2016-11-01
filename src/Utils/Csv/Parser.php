@@ -85,6 +85,16 @@ class Parser extends Object
 	/**
 	 * @return Parser
 	 */
+	public function noHead($noHead = true)
+	{
+		$this->getConfig()->noHead = $noHead;
+		return $this;
+	}
+
+
+	/**
+	 * @return Parser
+	 */
 	public function stopOnEmpty()
 	{
 		$this->getConfig()->stopOnEmpty = true;
@@ -143,6 +153,11 @@ class Parser extends Object
 	private function setHead($line)
 	{
 		$this->head = $line;
+
+		if ($this->getConfig()->noHead) {
+			return $this;
+		}
+
 		if ($this->getConfig()->requiredColumns) {
 			foreach ($this->getConfig()->requiredColumns as $key => $value) {
 				if (!in_array($value, $this->head)) {
@@ -151,6 +166,11 @@ class Parser extends Object
 						ParserException::ERROR_COLUMN_REQUIRE
 					);
 				}
+			}
+		} else {
+			$this->head = [];
+			foreach ($line as $key => $value) {
+				$this->head[$key] = $key;
 			}
 		}
 
@@ -337,7 +357,7 @@ class Parser extends Object
 		}
 
 		$file->close();
-		if ($this->getConfig()->skipHead) {
+		if ($this->getConfig()->skipHead && !$this->getConfig()->noHead) {
 			unset($rows[0]);
 		}
 		return $rows;
